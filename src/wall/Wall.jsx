@@ -10,24 +10,37 @@ const INTRO = {
   shame: "What clients did to us before Asha existed. Read yours in someone else's words, then add your own.",
   fame: "The ones Asha helped. The files stayed locked, the balance cleared, then the work was released.",
 };
-const PROMPT = { shame: "What has a client done to you?", fame: "How has Asha helped you?" };
+const PROMPT = { shame: "what has a client done to you?", fame: "how has Asha helped you?" };
 const TILT = [-1.2, 0.8, -0.6, 1.4, -0.9, 0.5];
 
+const EyeOff = () => (
+  <svg className="wl-eye" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <path d="M3 3l18 18" /><path d="M10.6 5.1A10.4 10.4 0 0 1 12 5c5 0 8.6 3.4 10 7a11.6 11.6 0 0 1-2.5 3.8M6.5 6.6A11.5 11.5 0 0 0 2 12c1.4 3.6 5 7 10 7 1.5 0 2.9-.3 4.1-.8" /><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2" />
+  </svg>
+);
+
 function Entry({ e, i, onShare, highlight }) {
+  const hasText = !!e.body?.trim();
+  const big = hasText && !e.shots.length && e.body.length <= 90; // a short line on its own is set large, like the design
   return (
     <article id={`story-${e.id}`} className={`wl-entry${highlight ? " wl-entry--pinned" : ""}`} style={{ "--r": `${TILT[i % TILT.length]}deg` }}>
       <span className="wl-tape" aria-hidden="true" />
-      <p className="wl-entry__body">{e.body}</p>
+      {!hasText && e.shotTitle && <h3 className="wl-entry__title">{e.shotTitle}</h3>}
+      {hasText && <p className={`wl-entry__body${big ? " wl-entry__body--big" : ""}`}>{e.body}</p>}
       {e.shots.map((src, k) => (
         <figure className="wl-print" key={src} style={{ "--r": `${TILT[(i + k + 2) % TILT.length]}deg` }}>
-          {e.shotTitle && k === 0 && <figcaption>{e.shotTitle}</figcaption>}
+          {e.shotTitle && k === 0 && hasText && <figcaption>{e.shotTitle}</figcaption>}
           <img src={src} alt={e.shotTitle ? `Screenshot: ${e.shotTitle}` : "Screenshot sent with this story"} loading="lazy" />
         </figure>
       ))}
-      <p className="wl-entry__who">
-        {e.handle ? <a href={`${APP_URL}/${e.handle}`} target="_blank" rel="noopener noreferrer">@{e.handle}</a> : "Anonymous creative"}
-      </p>
-      <button type="button" className="wl-entry__share" onClick={() => onShare(e)} aria-label="Share this story">Share</button>
+      <div className="wl-entry__foot">
+        <p className="wl-entry__who">
+          {e.handle
+            ? <a href={`${APP_URL}/${e.handle}`} target="_blank" rel="noopener noreferrer">@{e.handle} <span aria-hidden="true">&#8599;</span></a>
+            : <><EyeOff /> Anonymous creative</>}
+        </p>
+        <button type="button" className="wl-entry__share" onClick={() => onShare(e)} aria-label="Share this story">Share</button>
+      </div>
     </article>
   );
 }
@@ -70,6 +83,7 @@ export default function Wall({ kind }) {
   return (
     <>
       <Navbar />
+      <div className="wl-dark" data-nav-theme="dark">
       <main className="wl wl--wall">
         <header className="wl-head">
           <h1 className="wl-title">The Wall.</h1>
@@ -81,15 +95,14 @@ export default function Wall({ kind }) {
         </header>
 
         <section className="wl-add" aria-label="Add yours">
-          <span className="wl-tape" aria-hidden="true" />
-          <p className="wl-add__eyebrow">Add yours</p>
+          <span className="wl-tape wl-tape--label">Add yours</span>
           <h2>{PROMPT[kind]}</h2>
-          <p>Type it or upload screenshots. Anonymous by default, or add your @handle so people can find your work.</p>
-          <div className="wl-panel__row">
-            <a className="wl-btn wl-btn--solid" href="/wall">{WALL_LINK}</a>
-            <button type="button" className="wl-btn wl-btn--line" onClick={copy}>{copied ? "Copied" : "Copy link"}</button>
-            <PromptShare kind={kind} />
+          <p>Type it or upload screenshots. Anonymous by default, or add your @handle if you want the credit.</p>
+          <div className="wl-add__link">
+            <a href="/wall">{WALL_LINK}</a>
+            <button type="button" className="wl-btn wl-btn--solid" onClick={copy}>{copied ? "Copied" : "Copy link"}</button>
           </div>
+          <PromptShare kind={kind} />
         </section>
 
         {state.status === "loading" && <p className="wl-note" role="status">Loading the wall…</p>}
@@ -101,6 +114,7 @@ export default function Wall({ kind }) {
             {state.entries.filter((e) => e.id !== pinned?.id).map((e, i) => <Entry key={e.id} e={e} i={i + 1} onShare={setSharing} />)}
           </div>
         )}
+        <p className="wl-foot">Stories are sent in by creatives and reviewed before they go up. Names, phone numbers and faces are blurred or removed, so this wall is about what happened, not who did it.</p>
         {sharing && (
           <div className="wl-dialog" role="dialog" aria-modal="true" aria-label="Share this story" onClick={(ev) => ev.target === ev.currentTarget && setSharing(null)}>
             <div className="wl-dialog__box">
@@ -120,6 +134,7 @@ export default function Wall({ kind }) {
           </div>
         )}
       </main>
+      </div>
       <Footer />
     </>
   );

@@ -1,10 +1,10 @@
 import { useRef, useState } from "react";
-import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import ShareSheet from "./ShareSheet";
 import PromptShare from "./PromptShare";
 import { wallApi, uploadShot, APP_URL, WALL_LINK } from "./api";
 import { prepareImage } from "./image";
+import { logoOnLight } from "../images";
 import "./wall.css";
 
 const MAX_BODY = 300, MAX_SHOTS = 3, MAX_TITLE = 60;
@@ -64,7 +64,8 @@ export default function Send() {
 
   const send = async (e) => {
     e.preventDefault();
-    if (!body.trim()) return setError("Write your story first.");
+    // a screenshot is a story on its own: the words are only needed when there is no screenshot
+    if (!body.trim() && !shots.length) return setError("Write your story or add a screenshot.");
     setBusy(true); setError("");
     try {
       let paths = [];
@@ -88,8 +89,11 @@ export default function Send() {
 
   return (
     <>
-      <Navbar />
       <main className="wl wl--send">
+        <header className="wl-top">
+          <a href="/" aria-label="Asha home"><img src={logoOnLight} alt="Asha" /></a>
+          <a className="wl-btn wl-btn--solid wl-btn--sm" href="/wall/shame">Read the wall</a>
+        </header>
         {sent ? <ShareSheet {...sent} /> : (
           <form className="wl-form" onSubmit={send}>
             <div className="wl-tabs" role="group" aria-label="Which wall">
@@ -101,7 +105,7 @@ export default function Send() {
               <span className="wl-tape" aria-hidden="true" />
               <div className="wl-prompt__head"><h1>{c.head}</h1></div>
               <div className="wl-prompt__body">
-                <label className="wl-sr" htmlFor="wl-body">Your story</label>
+                <label className="wl-sr" htmlFor="wl-body">Your story (optional if you add a screenshot)</label>
                 <textarea id="wl-body" value={body} maxLength={MAX_BODY} placeholder={c.ph} onChange={(e) => setBody(e.target.value)} />
                 <span className="wl-count" aria-live="polite">{body.length}/{MAX_BODY}</span>
               </div>

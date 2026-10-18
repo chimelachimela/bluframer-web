@@ -3,7 +3,7 @@
 Modelled on a game-analytics "live stats" page that is meant to be shared: a LIVE pill, big numbers, a banner at the bottom with a "post these numbers" button. Code: `src/wall/Stats.jsx`, data from `GET /wall/stats` on bluframer-api.
 
 ## Layout
-Navbar like the landing page, then a navy **LIVE** pill ("Updated every 30 seconds"), the title "How creatives are protected, live.", the line "Real numbers from Asha. Nothing here is a client name or a file.", the number tiles, and a dark banner: the Asha logo, "LOCKED BY asha.com.ng", and a **Post these numbers** button (phone share sheet, or WhatsApp on desktop).
+Navbar like the landing page, then a navy **LIVE** pill ("Updated every 30 seconds"), the title "How creatives are protected, live.", the line "Real numbers from Asha. Nothing here is a client name or a file.", the number tiles, and a dark banner: the Asha logo, "LOCKED BY asha.com.ng", and a **Post these numbers** button. The button shares a **picture** (`renderStatsCard` in `storyCard.js`, 1080 x 1920: logo, LIVE pill, the number cards, a navy banner with asha.com.ng/stats) with the link in the caption. On a phone it opens the share sheet; on a laptop it copies the picture and opens WhatsApp with the words and link, and asks for a paste.
 
 ## What is shown today (four tiles)
 | Tile | Where the number comes from |

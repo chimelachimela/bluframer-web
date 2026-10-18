@@ -2,6 +2,9 @@ import { useEffect, useState } from "react";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import { wallApi } from "./api";
+import { renderStatsCard } from "./storyCard";
+import { shareImage, saveImage, copyImage } from "./share";
+import { logoOnDark } from "../images";
 import "./wall.css";
 
 const TILES = [
@@ -10,6 +13,7 @@ const TILES = [
   ["photosLocked", "Photos and designs locked"],
   ["released", "Released after approval"],
 ];
+const STATS_URL = "https://asha.com.ng/stats";
 const fmt = (n) => (typeof n === "number" ? n.toLocaleString("en-NG") : "—");
 
 export default function Stats() {
@@ -25,11 +29,29 @@ export default function Stats() {
     return () => { alive = false; clearInterval(t); };
   }, []);
 
-  const post = async () => {
+  // The card is drawn as soon as the numbers arrive, so the button can hand it over at once (browsers only allow
+  // copying to the clipboard right after a click).
+  const [card, setCard] = useState(null);
+  const [note, setNote] = useState("");
+  useEffect(() => {
     if (!stats) return;
-    const text = `On Asha right now: ${fmt(stats.creatives)} creatives, ${fmt(stats.photosLocked)} photos and designs locked, ${fmt(stats.released)} released after approval. asha.com.ng/stats`;
-    if (navigator.share) { try { await navigator.share({ text, url: "https://asha.com.ng/stats" }); } catch { /* cancelled */ } }
-    else window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank", "noopener");
+    let alive = true;
+    const asOf = new Date(stats.updatedAt || Date.now()).toLocaleDateString("en-NG", { day: "numeric", month: "short", year: "numeric" });
+    renderStatsCard({ tiles: TILES.map(([key, label]) => [label, fmt(stats[key])]), asOf }).then((c) => alive && setCard(c)).catch(() => {});
+    return () => { alive = false; };
+  }, [stats]);
+
+  const post = async () => {
+    if (!stats || !card) return;
+    const text = `On Asha right now: ${fmt(stats.creatives)} creatives, ${fmt(stats.photosLocked)} photos and designs locked, ${fmt(stats.released)} released after approval. ${STATS_URL}`;
+    // phone: the picture goes out through the share sheet with the link in the caption
+    const result = await shareImage({ blob: card.blob, text, name: "asha-live-stats.png" });
+    if (result === "shared" || result === "cancelled") return setNote("");
+    // laptop: copy the picture, open WhatsApp with the words and link, and ask for a paste
+    const ok = await copyImage(card.blob);
+    if (!ok) saveImage(card.blob, "asha-live-stats.png");
+    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank", "noopener");
+    setNote(ok ? "Card copied. In WhatsApp, paste it with Ctrl+V (Cmd+V on a Mac) to add the picture. The link is already in the text." : "Card saved. In WhatsApp, attach it from your downloads. The link is already in the text.");
   };
 
   return (
@@ -49,9 +71,11 @@ export default function Stats() {
         </ul>
         {failed && <p className="wl-note" role="alert">Couldn't reach the numbers just now. Trying again.</p>}
         <div className="wl-banner" data-nav-theme="dark">
+          <img className="wl-banner__logo" src={logoOnDark} alt="Asha" />
           <p>LOCKED BY <strong>asha.com.ng</strong></p>
-          <button type="button" className="wl-btn wl-btn--light" onClick={post} disabled={!stats}>Post these numbers</button>
+          <button type="button" className="wl-btn wl-btn--light" onClick={post} disabled={!card}>Post these numbers</button>
         </div>
+        {note && <p className="wl-note" role="status">{note}</p>}
       </main>
       <Footer />
     </>

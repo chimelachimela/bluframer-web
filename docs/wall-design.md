@@ -7,7 +7,7 @@ The code is in `src/wall/`. This file records the design decisions so they survi
 ## Pages
 | Address | What it is |
 |---|---|
-| `/wall` | Send page. Tabs: Wall of Shame / Wall of Fame. Story box (300 characters), up to 3 screenshots, optional title above the screenshots, Anonymous or "Use my @handle". |
+| `/wall` | Send page. Tabs: Wall of Shame / Wall of Fame. Story box (300 characters, optional when there is a screenshot), up to 3 screenshots, optional title above the screenshots, Anonymous or "Use my @handle". A screenshot-only story is valid. |
 | `/wall/shame`, `/wall/fame` | The walls. Approved stories only, newest first. |
 | `/stats` | Live numbers. See `stats-design.md`. |
 | app `/wall/review` | Moderators only (in the bluframer app repo). |
@@ -28,7 +28,7 @@ The code is in `src/wall/`. This file records the design decisions so they survi
 4. "+N more on the wall" if there are more screenshots.
 5. `asha.com.ng/wall` at the bottom.
 
-Rule: the text card never moves down to make room. Screenshots only use the space left below it, so one screenshot is shown large enough to read without squinting, and the rest stay on the wall. (This is why the story card shows one screenshot.) With no screenshot, the story is set larger in Indie Flower and centred.
+Rule: the text card never moves down to make room. Screenshots only use the space left below it, so one screenshot is shown large enough to read without squinting, and the rest stay on the wall. (This is why the story card shows one screenshot.) With no screenshot, the story is set larger in Indie Flower and centred. With a screenshot and no words (a screenshot-only story), the question card keeps its place with only the name line, and the screenshot gets the room, sized to its own shape so it isn't cropped.
 
 An alternative, **Layout A** (title at the top, logo at the bottom), was designed and not chosen.
 

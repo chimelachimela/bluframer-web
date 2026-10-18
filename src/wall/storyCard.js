@@ -1,4 +1,4 @@
-import { logoOnLight } from "../images";
+import { logoOnLight, logoOnDark } from "../images";
 
 // Draws the shareable story card (1080 x 1920), layout B: logo and wall name at the top, link at the bottom.
 // The text card keeps its place under the title; the screenshot only uses the room left below it.
@@ -70,6 +70,7 @@ export async function renderStoryCard(s) {
 
   // text card: always first under the title
   const hasShot = !!shot;
+  const noText = !String(s.body ?? "").trim(); // a screenshot-only story: the words are optional
   const question = s.kind === "fame" ? "how has Asha helped you?" : "what has a client done to you?";
   const cardW = 432, cardX = (W - cardW) / 2, inner = cardW - 64;
   ctx.font = '800 26px "Instrument Sans", sans-serif';
@@ -77,7 +78,7 @@ export async function renderStoryCard(s) {
   const bodyFont = hasShot ? '700 25px "Instrument Sans", sans-serif' : '700 38px "Indie Flower", cursive';
   const bodyLH = hasShot ? 33.75 : 46;
   ctx.font = bodyFont;
-  const bLines = wrap(ctx, s.body, inner);
+  const bLines = noText ? [] : wrap(ctx, s.body, inner);
   const headH = 30 + qLines.length * 30 + 24;
   const bodyH = 28 + bLines.length * bodyLH + 16 + 18 + 30;
   const cardH = headH + bodyH;
@@ -110,8 +111,10 @@ export async function renderStoryCard(s) {
     const titleH = s.shotTitle ? 44 : 0;
     const chrome = 14 + titleH;
     const room = 880 - printY - (more ? 78 : 0);
-    const imgH = Math.max(120, Math.min(261, room - chrome));
     const imgW = printW - 14;
+    // with words the picture is a small taped print; on its own it gets the room, sized to its shape so it isn't cropped
+    const fitH = noText ? imgW * (shot.naturalHeight / shot.naturalWidth) : Infinity;
+    const imgH = Math.max(120, Math.min(noText ? 460 : 261, room - chrome, fitH));
     const printH = chrome + imgH;
     tilt(ctx, W / 2, printY + printH / 2, -2, () => {
       ctx.fillStyle = LIGHT; hardShadow(ctx, printX, printY, printW, printH, 12, 5, 7);
@@ -212,6 +215,74 @@ export async function renderPromptCard(kind) {
     ctx.fillStyle = DARK; rr(ctx, px, py, pw, ph, 28); ctx.fill();
     ctx.fillStyle = LIGHT; ctx.textAlign = "center"; ctx.fillText(label, W / 2, py + 37);
   });
+
+  const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/png"));
+  return { blob, url: URL.createObjectURL(blob) };
+}
+
+
+/**
+ * The live-stats card (1080 x 1920) people post to their story. Same look as the story card: logo at the top,
+ * taped number cards, a navy banner with the link. The link is printed as words; the real one goes in the caption.
+ * @param {{tiles: [string, string][], asOf?: string}} s  tiles are [label, number as text]
+ */
+export async function renderStatsCard({ tiles, asOf }) {
+  await Promise.all([
+    document.fonts.load('800 38px "Indie Flower"'),
+    document.fonts.load('700 15px "Instrument Sans"'),
+  ]).catch(() => {});
+  const [logo, logoDark] = await Promise.all([loadImage(logoOnLight, true).catch(() => null), loadImage(logoOnDark, true).catch(() => null)]);
+
+  const canvas = document.createElement("canvas");
+  canvas.width = W * 2; canvas.height = H * 2;
+  const ctx = canvas.getContext("2d");
+  ctx.scale(2, 2);
+  ctx.textBaseline = "alphabetic";
+  ctx.fillStyle = LIGHT; ctx.fillRect(0, 0, W, H);
+
+  const lh = 56;
+  if (logo) { const lw = (logo.naturalWidth / logo.naturalHeight) * lh || lh * 3; ctx.drawImage(logo, (W - lw) / 2, 34, lw, lh); }
+
+  // LIVE pill
+  ctx.font = '800 14px "Instrument Sans", sans-serif';
+  const pillW = ctx.measureText("LIVE").width + 18 + 36, pillX = (W - pillW) / 2, pillY = 112;
+  ctx.fillStyle = DARK; rr(ctx, pillX, pillY, pillW, 30, 15); ctx.fill();
+  ctx.fillStyle = LIGHT; ctx.beginPath(); ctx.arc(pillX + 18, pillY + 15, 4, 0, Math.PI * 2); ctx.fill();
+  ctx.textAlign = "left"; ctx.fillText("LIVE", pillX + 30, pillY + 20);
+
+  // title
+  ctx.fillStyle = DARK; ctx.textAlign = "center"; ctx.font = '800 40px "Indie Flower", cursive';
+  wrap(ctx, "How creatives are protected, live.", 440).forEach((l, i) => ctx.fillText(l, W / 2, 196 + i * 46));
+
+  // number cards, two by two
+  const cw = 224, ch = 168, gap = 24, x0 = (W - (cw * 2 + gap)) / 2, y0 = 330;
+  tiles.slice(0, 4).forEach(([label, value], i) => {
+    const x = x0 + (i % 2) * (cw + gap), y = y0 + Math.floor(i / 2) * (ch + 34);
+    tilt(ctx, x + cw / 2, y + ch / 2, i % 2 ? 1.2 : -1.2, () => {
+      hardShadow(ctx, x, y, cw, ch, 22, 5, 7);
+      ctx.fillStyle = "#fff"; rr(ctx, x, y, cw, ch, 22); ctx.fill();
+      ctx.fillStyle = "rgba(28,40,62,0.75)"; ctx.textAlign = "left"; ctx.font = '700 15px "Instrument Sans", sans-serif';
+      wrap(ctx, label, cw - 36).slice(0, 2).forEach((l, k) => ctx.fillText(l, x + 18, y + 32 + k * 19));
+      ctx.fillStyle = DARK; ctx.font = '800 62px "Indie Flower", cursive';
+      ctx.fillText(value, x + 18, y + ch - 28, cw - 36);
+      tape(ctx, x + cw / 2, y - 10, cw * 0.3, 20, i % 2 ? 3 : -3, "#949aa2");
+    });
+  });
+
+  // banner
+  const bx = 34, bw = W - 68, by = 770, bh = 112;
+  ctx.fillStyle = "rgba(48,48,45,0.25)"; rr(ctx, bx + 5, by + 7, bw, bh, 26); ctx.fill();
+  ctx.fillStyle = DARK; rr(ctx, bx, by, bw, bh, 26); ctx.fill();
+  if (logoDark) { const bl = 40, bwid = (logoDark.naturalWidth / logoDark.naturalHeight) * bl || bl * 3; ctx.drawImage(logoDark, bx + 24, by + (bh - bl) / 2, bwid, bl); }
+  ctx.fillStyle = "rgba(247,247,243,0.75)"; ctx.textAlign = "right"; ctx.font = '700 12px "Instrument Sans", sans-serif';
+  ctx.fillText("LOCKED BY", bx + bw - 24, by + 44);
+  ctx.fillStyle = LIGHT; ctx.font = '800 30px "Indie Flower", cursive';
+  ctx.fillText("asha.com.ng/stats", bx + bw - 24, by + 82);
+
+  if (asOf) {
+    ctx.fillStyle = "rgba(28,40,62,0.7)"; ctx.textAlign = "center"; ctx.font = '700 15px "Instrument Sans", sans-serif';
+    ctx.fillText(`Live numbers, ${asOf}`, W / 2, H - 38);
+  }
 
   const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/png"));
   return { blob, url: URL.createObjectURL(blob) };

@@ -68,7 +68,7 @@ export default function ShareSheet({ kind, body, handle, shotTitle, shotUrl, ext
         {card ? <img src={card.url} alt="The story card, ready to post" /> : <div className="wl-share__wait">{failed ? "Couldn't draw the card." : "Drawing the card…"}</div>}
       </div>
 
-      <button type="button" className="wl-btn wl-btn--solid wl-btn--wide wl-btn--big" onClick={() => post("your app")} disabled={!card}>Share card</button>
+      <button type="button" className="wl-btn wl-btn--line wl-btn--wide" onClick={() => post("your app")} disabled={!card}>Share card</button>
       <div className="wl-share__row">
         <button type="button" className="wl-btn wl-btn--line" onClick={() => post("WhatsApp", whatsappText)} disabled={!card}>WhatsApp</button>
         <button type="button" className="wl-btn wl-btn--line" onClick={() => post("Instagram")} disabled={!card}>Instagram Story</button>
@@ -77,7 +77,7 @@ export default function ShareSheet({ kind, body, handle, shotTitle, shotUrl, ext
         <button type="button" className="wl-btn wl-btn--line" onClick={() => post("Threads", threadsText)} disabled={!card}>Threads</button>
         <button type="button" className="wl-btn wl-btn--line" onClick={() => post("X", xText)} disabled={!card}>X</button>
       </div>
-      <button type="button" className="wl-btn wl-btn--line wl-btn--wide" onClick={copy}>{copied ? "Link copied" : `Copy link: ${link.replace(/^https:\/\//, "")}`}</button>
+      <button type="button" className="wl-btn wl-btn--solid wl-btn--wide wl-btn--big" onClick={copy}>{copied ? "Link copied" : `Copy link: ${link.replace(/^https:\/\//, "")}`}</button>
       <button type="button" className="wl-btn wl-btn--line wl-btn--wide" onClick={() => card && saveImage(card.blob)} disabled={!card}>Save card as image</button>
 
       <p className="wl-note" role="status">{note || "On a phone, every button opens your share sheet with the picture and the link in the caption. On a laptop the card is copied so you can paste it into the app."}</p>
