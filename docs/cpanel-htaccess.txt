@@ -1,0 +1,16 @@
+# For hosting on cPanel / Apache (uploading the built "dist" files).
+# vercel.json is ignored there, so deep links like /wall/shame and /stats need this file to open the app.
+# Save as ".htaccess" next to index.html. If the host already has an .htaccess, add only the lines you are missing.
+
+<IfModule mod_rewrite.c>
+RewriteEngine On
+
+# Link previews: WhatsApp, Facebook, X and friends get the small preview page for the Wall.
+RewriteCond %{HTTP_USER_AGENT} (WhatsApp|facebookexternalhit|Facebot|Twitterbot|Slackbot|TelegramBot|LinkedInBot|Discordbot|Threads|meta-externalagent) [NC]
+RewriteRule ^wall(/(shame|fame))?/?$ /wall-preview.html [L]
+
+# Everything that is not a real file or folder opens the app (the page works out what to show from the address).
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^ /index.html [L]
+</IfModule>
